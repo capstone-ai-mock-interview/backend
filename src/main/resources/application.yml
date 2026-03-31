@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/interview_db
+    username: postgres
+    password: postgres
+
+  jpa:
+    # 개발 초기라 create 사용 — 앱 시작 시 테이블 재생성, 앱 종료 후에도 테이블 유지
+    # 개발 중기에는 update, 운영에서는 none으로 변경
+    hibernate:
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
