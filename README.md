@@ -51,7 +51,7 @@ com.capstone.interview/
 - 네이밍: `feature/기능명`, `fix/버그명`, `chore/작업명`, `refactor/대상`
 
 ### 커밋 메시지
-- `feat:` 새 기능 / `fix:` 버그 수정 / `chore:` 세팅·인프라 / `refactor:` 구조 개선 / `docs:` 문서 / `test:` 테스트
+- `feat:` 새 기능 / `fix:` 버그 수정 / `chore:` 세팅·인프라 / `refactor:` 구조 개선 / `docs:` 문서, 주석 / `test:` 테스트
 
 ### PR
 - 한 PR에 한 기능
