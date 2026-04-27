@@ -88,8 +88,8 @@ graph TB
 
 | Method | Path | 설명 | 요청 | 응답 | 상태 |
 |--------|------|------|------|------|------|
-| POST | `/sessions` | 면접 세션 생성 + LiveKit 방 생성 | `SessionCreateRequest` | 200 + `SessionCreateResponse` | 확정 |
-| POST | `/sessions/{sessionId}/end` | 면접 세션 종료 | `SessionEndRequest` | 200 + `SessionEndResponse` | 확정 |
+| POST | `/v1/interviews/sessions` | 면접 세션 생성 + LiveKit 방 생성 | `SessionCreateRequest` | 200 + `SessionCreateResponse` | 확정 |
+| POST | `/v1/interviews/sessions/{sessionId}/end` | 면접 세션 종료 | `SessionEndRequest` | 200 + `SessionEndResponse` | 확정 |
 <!-- TODO: 이력서/자소서 관련 API (1번 담당) -->
 <!-- TODO: 피드백 조회 API (4번 담당) -->
 <!-- TODO: 회원 관련 API (1번 담당) -->
@@ -141,8 +141,8 @@ graph TB
 #### SessionCreateRequest (면접 세션 생성)
 ```json
 {
-  "resumeId": 1,
-  "coverLetterId": 3,
+  "resumeIds": 1,
+  "coverLetter": 3,
   "jobField": "BACKEND",
   "durationMinutes": 15
 }
@@ -272,6 +272,7 @@ erDiagram
 
     INTERVIEWS {
         bigint id PK
+        varchar session_id UK
         bigint member_id FK
         bigint resume_id FK
         bigint cover_letter_id FK
@@ -384,6 +385,7 @@ CREATE TABLE cover_letters (
 
 CREATE TABLE interviews (
     id BIGSERIAL PRIMARY KEY,
+    session_id VARCHAR(50) UNIQUE NOT NULL,                      -- 외부 API 식별자 (sess-uuid)
     member_id BIGINT REFERENCES members(id) ON DELETE SET NULL,  -- 회원 탈퇴 시 기록 보존
     resume_id BIGINT REFERENCES resumes(id),
     cover_letter_id BIGINT REFERENCES cover_letters(id),
@@ -422,6 +424,7 @@ CREATE INDEX idx_resumes_member ON resumes(member_id);
 CREATE INDEX idx_cover_letters_member ON cover_letters(member_id);
 CREATE INDEX idx_interviews_member ON interviews(member_id);
 CREATE INDEX idx_interviews_status ON interviews(status);
+CREATE INDEX idx_interviews_session_id ON interviews(session_id);
 CREATE INDEX idx_interview_qnas_interview ON interview_qnas(interview_id);
 CREATE INDEX idx_interview_qnas_parent ON interview_qnas(parent_id);
 CREATE INDEX idx_resumes_embedding ON resumes USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
