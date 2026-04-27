@@ -52,6 +52,12 @@ public class InterviewQna {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /** 모범답안 + 개별 피드백 저장 (EvaluationService에서 호출) */
+    public void updateFeedback(String modelAnswer, String individualFeedback) {
+        this.modelAnswer = modelAnswer;
+        this.individualFeedback = individualFeedback;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -45,6 +45,11 @@ public class Interview {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    /** 종합 피드백 저장 (EvaluationService에서 호출) */
+    public void updateTotalFeedback(String totalFeedback) {
+        this.totalFeedback = totalFeedback;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
