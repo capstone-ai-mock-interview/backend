@@ -30,8 +30,7 @@ public class Resume {
     @Column(name = "file_url", length = 1024)
     private String fileUrl;
 
-    // JSON 타입 — 실제 파싱/직렬화는 서비스 레이어에서 처리
-    @Column(columnDefinition = "json")
+    @Column(columnDefinition = "text")
     private String keywords;
 
     // TODO: pgvector 타입 지원 시 vector(1536)으로 교체 (현재 JPA 기본 미지원)
