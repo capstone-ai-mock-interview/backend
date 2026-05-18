@@ -1,5 +1,8 @@
 package com.capstone.interview.controller;
 
+import com.capstone.interview.dto.JoinSessionRequest;
+import com.capstone.interview.dto.JoinSessionResponse;
+import com.capstone.interview.dto.LobbyResponse;
 import com.capstone.interview.dto.NextTurnRequest;
 import com.capstone.interview.dto.NextTurnResponse;
 import com.capstone.interview.dto.SessionCreateRequest;
@@ -50,6 +53,26 @@ public class InterviewController {
         SessionEndResponse response = interviewService.endSession(sessionId, request.reason());
         log.info("[세션 종료 성공] sessionId={}, status={}", sessionId, response.data().status());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{sessionId}/join")
+    public ResponseEntity<JoinSessionResponse> joinSession(
+            @PathVariable String sessionId,
+            @RequestBody(required = false) JoinSessionRequest request) {
+        log.info("[세션 입장] sessionId={}", sessionId);
+        JoinSessionResponse response = interviewService.joinSession(sessionId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{sessionId}/lobby")
+    public ResponseEntity<LobbyResponse> getLobby(@PathVariable String sessionId) {
+        return ResponseEntity.ok(interviewService.getLobby(sessionId));
+    }
+
+    @PatchMapping("/{sessionId}/participants/me/ready")
+    public ResponseEntity<LobbyResponse> setReady(@PathVariable String sessionId) {
+        log.info("[준비 완료] sessionId={}", sessionId);
+        return ResponseEntity.ok(interviewService.setReady(sessionId));
     }
 
     @DeleteMapping("/{sessionId}")

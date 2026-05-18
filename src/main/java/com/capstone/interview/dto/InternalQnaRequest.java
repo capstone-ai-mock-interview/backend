@@ -10,5 +10,6 @@ public record InternalQnaRequest(
     String answer,
     List<String> answerSummary,
     String followUpDecision,
-    String focusPoint
+    String focusPoint,
+    Long respondentMemberId
 ) {}

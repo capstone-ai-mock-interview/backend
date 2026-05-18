@@ -37,7 +37,12 @@ public class InternalQnaService {
                 .findByInterviewAndSequenceNumber(interview, request.turnNumber())
                 .orElse(null);
 
+        Long respondentId = resolveRespondentId(interview, request);
+
         if (existing != null) {
+            if (respondentId != null) {
+                existing.setRespondentMemberId(respondentId);
+            }
             if (request.question() != null) {
                 existing.updateQuestion(
                         request.question(),
@@ -73,6 +78,7 @@ public class InternalQnaService {
                     .answerSummary(toJson(request.answerSummary()))
                     .followUpDecision(request.followUpDecision())
                     .focusPoint(request.focusPoint())
+                    .respondentMemberId(respondentId)
                     .build();
             interviewQnaRepository.save(newQna);
             log.info("[QnA insert] created sessionId={}, turn={}", sessionId, request.turnNumber());
@@ -81,6 +87,19 @@ public class InternalQnaService {
         if (request.turnNumber() != null && request.answerSummary() != null) {
             eventPublisher.publishEvent(new QnaSavedEvent(sessionId, request.turnNumber()));
         }
+    }
+
+    private Long resolveRespondentId(Interview interview, InternalQnaRequest request) {
+        if (request.respondentMemberId() != null) {
+            return request.respondentMemberId();
+        }
+        if (!interview.isGroupMode() && interview.getMember() != null) {
+            return interview.getMember().getId();
+        }
+        if (interview.isGroupMode()) {
+            log.warn("[QnA upsert] group session missing respondentMemberId sessionId={}", interview.getSessionId());
+        }
+        return null;
     }
 
     private boolean hasAnswerAnalysis(InternalQnaRequest request) {

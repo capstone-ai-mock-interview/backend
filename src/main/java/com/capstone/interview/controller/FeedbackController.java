@@ -29,15 +29,13 @@ public class FeedbackController {
      * * @return 개별평가, 개별모범답안, 전체 피드백이 모두 담긴 FeedbackResponse
      */
     @GetMapping("/feedback/{sessionId}")
-    public ResponseEntity<FeedbackResponse> getFeedback(@PathVariable String sessionId) {
+    public ResponseEntity<FeedbackResponse> getFeedback(
+            @PathVariable String sessionId,
+            Authentication authentication) {
         log.info("[피드백 조회 시작] sessionId: {}", sessionId);
-
-        // 1. 서비스에서 모든 피드백 정보(전체 총평 + 개별 문항 세트)를 가져옴
-        FeedbackResponse response = feedbackService.getFeedback(sessionId);
-
+        String loginId = authentication.getName();
+        FeedbackResponse response = feedbackService.getFeedback(sessionId, loginId);
         log.info("[피드백 조회 완료] sessionId: {}", sessionId);
-
-        // 2. ResponseEntity에 FeedbackResponse 객체를 담아 전송
         return ResponseEntity.ok(response);
     }
 

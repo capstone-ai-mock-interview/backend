@@ -8,7 +8,10 @@ public record SessionCreateResponse(
         String sessionId,
         LiveKitInfo livekit,
         int answerTimeLimitSeconds,
-        int totalDurationSeconds
+        int totalDurationSeconds,
+        String mode,
+        int maxParticipants,
+        String status
     ) {}
 
     public record LiveKitInfo(

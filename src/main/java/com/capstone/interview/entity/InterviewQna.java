@@ -22,6 +22,9 @@ public class InterviewQna {
     @JoinColumn(name = "interview_id", nullable = false)
     private Interview interview;
 
+    @Column(name = "respondent_member_id")
+    private Long respondentMemberId;
+
     @Column(name = "sequence_number", nullable = false)
     private Integer sequenceNumber;
 
@@ -80,8 +83,10 @@ public class InterviewQna {
     public InterviewQna(Interview interview, Integer sequenceNumber, String questionContent,
                         String answerContent, boolean isFollowUp, InterviewQna parent,
                         String intent, String answerSummary, String followUpDecision,
-                        String focusPoint, LocalDateTime startedAt, LocalDateTime expiresAt) {
+                        String focusPoint, LocalDateTime startedAt, LocalDateTime expiresAt,
+                        Long respondentMemberId) {
         this.interview = interview;
+        this.respondentMemberId = respondentMemberId;
         this.sequenceNumber = sequenceNumber;
         this.questionContent = questionContent;
         this.answerContent = answerContent;
@@ -93,6 +98,10 @@ public class InterviewQna {
         this.focusPoint = focusPoint;
         this.startedAt = startedAt;
         this.expiresAt = expiresAt;
+    }
+
+    public void setRespondentMemberId(Long respondentMemberId) {
+        this.respondentMemberId = respondentMemberId;
     }
 
     public void updateAnswer(String answerContent) {

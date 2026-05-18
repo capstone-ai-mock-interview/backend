@@ -2,8 +2,11 @@ package com.capstone.interview.service;
 
 import com.capstone.interview.config.LLMClient;
 import com.capstone.interview.entity.Interview;
+import com.capstone.interview.entity.InterviewMode;
+import com.capstone.interview.entity.InterviewParticipant;
 import com.capstone.interview.entity.InterviewQna;
 import com.capstone.interview.event.QnaSavedEvent;
+import com.capstone.interview.repository.InterviewParticipantRepository;
 import com.capstone.interview.repository.InterviewQnaRepository;
 import com.capstone.interview.repository.InterviewRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -83,6 +86,7 @@ public class EvaluationService {
 
     private final InterviewRepository interviewRepository;
     private final InterviewQnaRepository interviewQnaRepository;
+    private final InterviewParticipantRepository participantRepository;
     private final LLMClient llmClient;
     private final ObjectMapper objectMapper;
 
@@ -133,6 +137,11 @@ public class EvaluationService {
         Interview interview = interviewRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
 
+        if (interview.getMode() == InterviewMode.GROUP) {
+            evaluateAllParticipants(sessionId);
+            return;
+        }
+
         if (interview.getTotalFeedback() != null) {
             log.info("[evaluation skipped] already completed sessionId={}", sessionId);
             return;
@@ -160,6 +169,103 @@ public class EvaluationService {
                 buildTotalPrompt(interview, qnas)
         );
         parseAndSaveTotal(response, interview);
+    }
+
+    @Async
+    @Transactional
+    public void evaluateAllParticipants(String sessionId) {
+        waitForLastAgentSave();
+
+        Interview interview = interviewRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
+
+        List<InterviewParticipant> participants =
+                participantRepository.findByInterviewOrderByJoinedAtAsc(interview);
+
+        for (InterviewParticipant participant : participants) {
+            if (participant.hasFeedback()) {
+                log.info("[evaluation skipped] participant already evaluated memberId={}",
+                        participant.getMember().getId());
+                continue;
+            }
+            evaluateParticipant(interview, participant);
+        }
+    }
+
+    private void evaluateParticipant(Interview interview, InterviewParticipant participant) {
+        Long memberId = participant.getMember().getId();
+        List<InterviewQna> qnas = interviewQnaRepository
+                .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, memberId)
+                .stream()
+                .filter(this::hasQuestion)
+                .toList();
+
+        if (qnas.isEmpty()) {
+            qnas = interviewQnaRepository.findByInterviewOrderBySequenceNumberAsc(interview)
+                    .stream()
+                    .filter(this::hasQuestion)
+                    .filter(q -> q.getRespondentMemberId() == null)
+                    .toList();
+        }
+
+        if (qnas.isEmpty()) {
+            log.warn("[evaluation skipped] no QnA for participant memberId={}", memberId);
+            return;
+        }
+
+        for (InterviewQna qna : qnas) {
+            if (shouldEvaluateTurn(qna)) {
+                evaluateTurnForQna(interview, qna);
+            }
+        }
+
+        qnas = interviewQnaRepository
+                .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, memberId);
+        if (qnas.isEmpty()) {
+            qnas = interviewQnaRepository.findByInterviewOrderBySequenceNumberAsc(interview);
+        }
+
+        String response = llmClient.invoke(
+                TOTAL_EVALUATION_SYSTEM_PROMPT,
+                buildTotalPrompt(interview, qnas)
+        );
+        parseAndSaveParticipantTotal(response, participant);
+    }
+
+    private void evaluateTurnForQna(Interview interview, InterviewQna qna) {
+        try {
+            String response = llmClient.invoke(
+                    TURN_EVALUATION_SYSTEM_PROMPT,
+                    buildTurnPrompt(interview, qna)
+            );
+            JsonNode root = objectMapper.readTree(extractJson(response));
+            String individualFeedback = root.path("individual_feedback").asText("");
+            String modelAnswer = root.path("model_answer").asText("");
+            qna.saveFeedback(modelAnswer, individualFeedback);
+            interviewQnaRepository.save(qna);
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Turn evaluation failed: " + interview.getSessionId() + "#" + qna.getSequenceNumber(), e);
+        }
+    }
+
+    private void parseAndSaveParticipantTotal(String llmResponse, InterviewParticipant participant) {
+        try {
+            JsonNode root = objectMapper.readTree(extractJson(llmResponse));
+            String totalFeedback = root.path("total_feedback").asText("피드백 정보가 없습니다.");
+            String overallScore = root.path("overall_score").asText("N/A");
+            String competencyChart = root.path("competency_chart").isMissingNode()
+                    ? "{}"
+                    : root.path("competency_chart").toString();
+
+            String combined = totalFeedback + "\n\n[SCORE]\n" + overallScore + "\n\n[CHART]\n" + competencyChart;
+            participant.saveTotalFeedback(combined, overallScore);
+            participantRepository.save(participant);
+            log.info("[participant evaluation saved] sessionId={}, memberId={}",
+                    participant.getInterview().getSessionId(), participant.getMember().getId());
+        } catch (Exception e) {
+            log.error("[participant evaluation parse failed] memberId={}", participant.getMember().getId(), e);
+        }
     }
 
     private String buildTurnPrompt(Interview interview, InterviewQna qna) {

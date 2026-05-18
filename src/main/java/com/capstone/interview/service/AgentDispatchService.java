@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,16 +49,36 @@ public class AgentDispatchService {
     public void dispatch(String roomName, String sessionId, String jobRole,
                          String resumeText, String coverLetterText,
                          int totalDurationSeconds, int answerTimeLimitSeconds) {
-        try {
-            // metadata 구성
-            Map<String, Object> metadata = new LinkedHashMap<>();
-            metadata.put("sessionId", sessionId);
-            metadata.put("jobRole", jobRole);
-            metadata.put("resumeText", resumeText != null ? resumeText : "");
-            metadata.put("coverLetterText", coverLetterText != null ? coverLetterText : "");
-            metadata.put("totalDurationSeconds", totalDurationSeconds);
-            metadata.put("answerTimeLimitSeconds", answerTimeLimitSeconds);
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("mode", "SOLO");
+        metadata.put("sessionId", sessionId);
+        metadata.put("jobRole", jobRole);
+        metadata.put("resumeText", resumeText != null ? resumeText : "");
+        metadata.put("coverLetterText", coverLetterText != null ? coverLetterText : "");
+        metadata.put("totalDurationSeconds", totalDurationSeconds);
+        metadata.put("answerTimeLimitSeconds", answerTimeLimitSeconds);
+        createDispatch(roomName, sessionId, metadata);
+    }
 
+    public void dispatchGroup(String roomName, String sessionId, String jobRole,
+                              String resumeText, String coverLetterText,
+                              int totalDurationSeconds, int answerTimeLimitSeconds,
+                              int maxParticipants, List<Map<String, Object>> participants) {
+        Map<String, Object> metadata = new LinkedHashMap<>();
+        metadata.put("mode", "GROUP");
+        metadata.put("sessionId", sessionId);
+        metadata.put("jobRole", jobRole);
+        metadata.put("resumeText", resumeText != null ? resumeText : "");
+        metadata.put("coverLetterText", coverLetterText != null ? coverLetterText : "");
+        metadata.put("totalDurationSeconds", totalDurationSeconds);
+        metadata.put("answerTimeLimitSeconds", answerTimeLimitSeconds);
+        metadata.put("maxParticipants", maxParticipants);
+        metadata.put("participants", participants);
+        createDispatch(roomName, sessionId, metadata);
+    }
+
+    private void createDispatch(String roomName, String sessionId, Map<String, Object> metadata) {
+        try {
             String metadataJson = objectMapper.writeValueAsString(metadata);
 
             // Twirp request body
