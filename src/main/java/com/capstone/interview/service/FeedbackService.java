@@ -43,29 +43,45 @@ public class FeedbackService {
                     .orElseThrow(() -> new UnauthorizedException("이 면접의 참가자가 아닙니다."));
 
             String rawFeedback = participant.getTotalFeedback();
+            List<InterviewQna> qnas = interviewQnaRepository
+                    .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, member.getId());
+
             if (rawFeedback == null) {
                 return FeedbackResponse.builder()
                         .success(false)
-                        .totalFeedback("AI 피드백이 생성 중입니다. 잠시 후 다시 시도해주세요.")
+                        .totalFeedback(interview.getStatus() == InterviewStatus.COMPLETED
+                                ? "AI 피드백을 생성 중입니다. 잠시 후 다시 시도해주세요."
+                                : "면접이 아직 종료되지 않았습니다.")
+                        .qaPairs(List.of())
                         .build();
             }
 
-            List<InterviewQna> qnas = interviewQnaRepository
-                    .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, member.getId());
+            if (qnas.isEmpty()) {
+                return FeedbackResponse.builder()
+                        .success(true)
+                        .totalFeedback(rawFeedback)
+                        .overallScore(extractOverallScore(rawFeedback))
+                        .competencyChart(extractChartData(rawFeedback))
+                        .qaPairs(List.of())
+                        .build();
+            }
 
             return buildFeedbackResponse(rawFeedback, qnas);
         }
 
         String rawFeedback = interview.getTotalFeedback();
+        List<InterviewQna> qnas = interviewQnaRepository
+                .findByInterviewOrderBySequenceNumberAsc(interview);
+
         if (rawFeedback == null) {
             return FeedbackResponse.builder()
                     .success(false)
-                    .totalFeedback("AI 피드백이 생성 중입니다. 잠시 후 다시 시도해주세요.")
+                    .totalFeedback(interview.getStatus() == InterviewStatus.COMPLETED
+                            ? "AI 피드백을 생성 중입니다. 잠시 후 다시 시도해주세요."
+                            : "면접이 아직 종료되지 않았습니다.")
+                    .qaPairs(List.of())
                     .build();
         }
-
-        List<InterviewQna> qnas = interviewQnaRepository
-                .findByInterviewOrderBySequenceNumberAsc(interview);
 
         return buildFeedbackResponse(rawFeedback, qnas);
     }

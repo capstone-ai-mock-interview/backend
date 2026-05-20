@@ -33,6 +33,7 @@ class GroupInterviewFlowTest {
     @Mock LiveKitService liveKitService;
     @Mock LiveKitRoomService liveKitRoomService;
     @Mock AgentDispatchService agentDispatchService;
+    @Mock EvaluationService evaluationService;
 
     @InjectMocks InterviewService interviewService;
 

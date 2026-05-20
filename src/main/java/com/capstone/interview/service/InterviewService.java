@@ -33,6 +33,7 @@ public class InterviewService {
     private final LiveKitService liveKitService;
     private final LiveKitRoomService liveKitRoomService;
     private final AgentDispatchService agentDispatchService;
+    private final EvaluationService evaluationService;
 
     @Transactional
     public SessionCreateResponse createSession(SessionCreateRequest request) {
@@ -109,11 +110,7 @@ public class InterviewService {
             throw new ConflictException("면접 정원이 가득 찼습니다.");
         }
 
-        Resume resume = null;
-        if (request != null && request.resumeId() != null) {
-            resume = resumeRepository.findById(request.resumeId())
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이력서입니다: " + request.resumeId()));
-        }
+        Resume resume = resolveParticipantResume(member, request);
 
         InterviewParticipant guest = InterviewParticipant.builder()
                 .interview(interview)
@@ -253,6 +250,8 @@ public class InterviewService {
         interview.complete();
         interviewRepository.save(interview);
 
+        evaluationService.evaluate(sessionId);
+
         return new SessionEndResponse(
                 true,
                 "면접이 종료되었습니다. AI 피드백을 생성 중입니다.",
@@ -311,17 +310,14 @@ public class InterviewService {
         interviewRepository.save(interview);
 
         List<Map<String, Object>> participantMeta = buildParticipantMetadata(participants);
-        String resumeText = interview.getResume() != null ? interview.getResume().getOriginalText() : "";
-        String coverLetterText = interview.getCoverLetter() != null
-                ? interview.getCoverLetter().getOriginalText() : "";
 
         try {
             agentDispatchService.dispatchGroup(
                     interview.getRoomName(),
                     interview.getSessionId(),
                     interview.getCategory(),
-                    resumeText,
-                    coverLetterText,
+                    "",
+                    "",
                     interview.getDurationMinutes() * 60,
                     ANSWER_TIME_LIMIT_SECONDS,
                     interview.getMaxParticipants(),
@@ -348,7 +344,7 @@ public class InterviewService {
             if (interview.isGroupMode()) {
                 agentDispatchService.dispatchGroup(
                         interview.getRoomName(), interview.getSessionId(), jobField,
-                        resumeText, coverLetterText, totalDurationSeconds,
+                        "", "", totalDurationSeconds,
                         ANSWER_TIME_LIMIT_SECONDS, interview.getMaxParticipants(), participantMeta);
             } else {
                 agentDispatchService.dispatch(
@@ -561,8 +557,22 @@ public class InterviewService {
         verifyOwner(interview);
 
         interviewQnaRepository.deleteAllByInterview(interview);
+        participantRepository.deleteAll(
+                participantRepository.findByInterviewOrderByJoinedAtAsc(interview));
         interviewRepository.delete(interview);
         log.info("[면접 기록 삭제] sessionId={}", sessionId);
+    }
+
+    private Resume resolveParticipantResume(Member member, JoinSessionRequest request) {
+        if (request == null || request.resumeId() == null) {
+            throw new IllegalArgumentException("그룹 면접 입장 시 이력서(resumeId)를 선택해야 합니다.");
+        }
+        Resume resume = resumeRepository.findById(request.resumeId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이력서입니다: " + request.resumeId()));
+        if (!resume.getMember().getId().equals(member.getId())) {
+            throw new UnauthorizedException("본인의 이력서만 선택할 수 있습니다.");
+        }
+        return resume;
     }
 
     public Interview findInterviewForFeedback(String sessionId) {

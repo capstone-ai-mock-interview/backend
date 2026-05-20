@@ -200,7 +200,7 @@ public class EvaluationService {
                 .filter(this::hasQuestion)
                 .toList();
 
-        if (qnas.isEmpty()) {
+        if (qnas.isEmpty() && !interview.isGroupMode()) {
             qnas = interviewQnaRepository.findByInterviewOrderBySequenceNumberAsc(interview)
                     .stream()
                     .filter(this::hasQuestion)
@@ -220,8 +220,11 @@ public class EvaluationService {
         }
 
         qnas = interviewQnaRepository
-                .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, memberId);
-        if (qnas.isEmpty()) {
+                .findByInterviewAndRespondentMemberIdOrderBySequenceNumberAsc(interview, memberId)
+                .stream()
+                .filter(this::hasQuestion)
+                .toList();
+        if (qnas.isEmpty() && !interview.isGroupMode()) {
             qnas = interviewQnaRepository.findByInterviewOrderBySequenceNumberAsc(interview);
         }
 

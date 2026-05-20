@@ -126,8 +126,14 @@ public class InternalQnaService {
         if (!interview.isGroupMode() && interview.getMember() != null) {
             return interview.getMember().getId();
         }
+        if (interview.isGroupMode() && interview.getCurrentSpeakerMemberId() != null) {
+            log.info("[QnA upsert] respondentMemberId 없음 → currentSpeakerMemberId={} sessionId={}",
+                    interview.getCurrentSpeakerMemberId(), interview.getSessionId());
+            return interview.getCurrentSpeakerMemberId();
+        }
         if (interview.isGroupMode()) {
-            log.warn("[QnA upsert] group session missing respondentMemberId sessionId={}", interview.getSessionId());
+            log.warn("[QnA upsert] group session missing respondentMemberId and currentSpeaker sessionId={}",
+                    interview.getSessionId());
         }
         return null;
     }
