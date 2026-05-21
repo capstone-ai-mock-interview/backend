@@ -542,7 +542,8 @@ public class InterviewService {
         findParticipantOrThrow(interview, member);
         Long currentSpeakerMemberId = interview.getCurrentSpeakerMemberId();
         if (currentSpeakerMemberId == null) {
-            throw new InvalidStateException("현재 답변자 정보가 아직 준비되지 않았습니다.");
+            // Agent가 아직 speaker를 설정하지 않은 경우 참가자이면 허용
+            return;
         }
         if (!currentSpeakerMemberId.equals(member.getId())) {
             throw new UnauthorizedException("현재 답변자만 다음 질문을 요청할 수 있습니다.");
