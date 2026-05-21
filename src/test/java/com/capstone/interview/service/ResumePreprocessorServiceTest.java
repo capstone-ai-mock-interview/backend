@@ -1,9 +1,12 @@
 package com.capstone.interview.service;
 
+import com.capstone.interview.config.LLMClient;
 import com.capstone.interview.config.MockLLMClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -31,6 +34,47 @@ class ResumePreprocessorServiceTest {
         assertFalse(root.path("claims").isEmpty());
         assertFalse(root.path("claims").get(0).path("text").asText().isBlank());
         assertTrue(root.path("claims").get(0).path("keywords").isArray());
+        assertFalse(root.path("claims").get(0).path("keywords").isEmpty());
+    }
+
+    @Test
+    void preprocess_accepts_markdown_json_code_block_response() throws Exception {
+        ResumePreprocessorService codeBlockService = new ResumePreprocessorService(
+                new LLMClient() {
+                    @Override
+                    public String invoke(String prompt) {
+                        return invoke("", prompt);
+                    }
+
+                    @Override
+                    public String invoke(String systemPrompt, String userPrompt) {
+                        return """
+                                ```json
+                                {
+                                  "summary": "백엔드 개발 경험",
+                                  "claims": [
+                                    {
+                                      "text": "Java와 Spring Boot 기반 서비스를 구현했다.",
+                                      "keywords": ["Java", "Spring Boot"]
+                                    }
+                                  ]
+                                }
+                                ```
+                                """;
+                    }
+
+                    @Override
+                    public List<Float> embed(String text) {
+                        return List.of();
+                    }
+                },
+                objectMapper
+        );
+
+        String result = codeBlockService.preprocess("Java와 Spring Boot 기반 서비스를 구현했습니다.");
+        JsonNode root = objectMapper.readTree(result);
+
+        assertFalse(root.path("summary").asText().isBlank());
         assertFalse(root.path("claims").get(0).path("keywords").isEmpty());
     }
 }
