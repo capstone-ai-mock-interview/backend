@@ -43,6 +43,9 @@ public class Resume {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Builder
     private Resume(Member member, String title, String originalText, String fileUrl, String keywords) {
         this.member = member;
@@ -62,6 +65,10 @@ public class Resume {
 
     public void updateKeywords(String keywords) {
         this.keywords = keywords;
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     @PrePersist

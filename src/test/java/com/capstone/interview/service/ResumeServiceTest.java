@@ -1,12 +1,7 @@
 package com.capstone.interview.service;
 
-import com.capstone.interview.entity.Interview;
-import com.capstone.interview.entity.InterviewParticipant;
 import com.capstone.interview.entity.Member;
-import com.capstone.interview.entity.ParticipantRole;
 import com.capstone.interview.entity.Resume;
-import com.capstone.interview.repository.InterviewParticipantRepository;
-import com.capstone.interview.repository.InterviewRepository;
 import com.capstone.interview.repository.MemberRepository;
 import com.capstone.interview.repository.ResumeRepository;
 import org.junit.jupiter.api.Test;
@@ -15,12 +10,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class ResumeServiceTest {
@@ -29,13 +24,11 @@ class ResumeServiceTest {
     @Mock ResumePreprocessorService resumePreprocessorService;
     @Mock ResumeRepository resumeRepository;
     @Mock MemberRepository memberRepository;
-    @Mock InterviewRepository interviewRepository;
-    @Mock InterviewParticipantRepository interviewParticipantRepository;
 
     @InjectMocks ResumeService resumeService;
 
     @Test
-    void deleteResume_clearsInterviewAndParticipantReferencesBeforeDelete() {
+    void deleteResume_marksResumeDeletedWithoutPhysicalDelete() {
         Member member = Member.builder()
                 .loginId("user")
                 .password("password")
@@ -50,33 +43,13 @@ class ResumeServiceTest {
                 .build();
         setId(resume, 7L);
 
-        Interview interview = Interview.builder()
-                .member(member)
-                .resume(resume)
-                .category("BACKEND")
-                .sessionId("session")
-                .roomName("room")
-                .durationMinutes(15)
-                .build();
-
-        InterviewParticipant participant = InterviewParticipant.builder()
-                .interview(interview)
-                .member(member)
-                .role(ParticipantRole.HOST)
-                .resume(resume)
-                .ready(true)
-                .build();
-
         when(memberRepository.findByLoginId("user")).thenReturn(Optional.of(member));
-        when(resumeRepository.findById(7L)).thenReturn(Optional.of(resume));
-        when(interviewRepository.findByResumeId(7L)).thenReturn(List.of(interview));
-        when(interviewParticipantRepository.findByResumeId(7L)).thenReturn(List.of(participant));
+        when(resumeRepository.findByIdAndDeletedAtIsNull(7L)).thenReturn(Optional.of(resume));
 
         resumeService.deleteResume("user", 7L);
 
-        assertNull(interview.getResume());
-        assertNull(participant.getResume());
-        verify(resumeRepository).delete(resume);
+        assertNotNull(resume.getDeletedAt());
+        verify(resumeRepository, never()).delete(resume);
     }
 
     private static void setId(Object entity, Long id) {
