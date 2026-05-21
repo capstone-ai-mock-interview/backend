@@ -70,10 +70,6 @@ public class InterviewParticipant {
         this.ready = true;
     }
 
-    public void clearResume() {
-        this.resume = null;
-    }
-
     public void saveTotalFeedback(String totalFeedback, String overallScore) {
         this.totalFeedback = totalFeedback;
         this.overallScore = overallScore;

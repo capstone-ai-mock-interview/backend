@@ -495,7 +495,7 @@ public class InterviewService {
 
     private Resume resolveResume(Long resumeId) {
         if (resumeId == null) return null;
-        return resumeRepository.findById(resumeId)
+        return resumeRepository.findByIdAndDeletedAtIsNull(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이력서입니다: " + resumeId));
     }
 
@@ -577,7 +577,7 @@ public class InterviewService {
         if (request == null || request.resumeId() == null) {
             throw new IllegalArgumentException("그룹 면접 입장 시 이력서(resumeId)를 선택해야 합니다.");
         }
-        Resume resume = resumeRepository.findById(request.resumeId())
+        Resume resume = resumeRepository.findByIdAndDeletedAtIsNull(request.resumeId())
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이력서입니다: " + request.resumeId()));
         if (!resume.getMember().getId().equals(member.getId())) {
             throw new UnauthorizedException("본인의 이력서만 선택할 수 있습니다.");

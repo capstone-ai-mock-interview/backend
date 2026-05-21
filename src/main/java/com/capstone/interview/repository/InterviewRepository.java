@@ -14,5 +14,4 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     //피드백 목록 조회 : 해당 회원의 COMPLETED 상태 면접만 최신순 조회
     List<Interview> findByMemberIdAndStatusOrderByCreatedAtDesc(Long memberId, InterviewStatus status);
     // 이력서 삭제 시 참조 해제용
-    List<Interview> findByResumeId(Long resumeId);
 }

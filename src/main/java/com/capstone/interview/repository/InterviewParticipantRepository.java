@@ -18,7 +18,5 @@ public interface InterviewParticipantRepository extends JpaRepository<InterviewP
 
     long countByInterviewAndReadyTrue(Interview interview);
 
-    List<InterviewParticipant> findByResumeId(Long resumeId);
-
     List<InterviewParticipant> findByMemberIdOrderByJoinedAtDesc(Long memberId);
 }

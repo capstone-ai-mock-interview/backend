@@ -117,10 +117,6 @@ public class Interview {
         this.status = InterviewStatus.FAILED;
     }
 
-    public void clearResume() {
-        this.resume = null;
-    }
-
     //EvaluationService에서 total_feedback 저장을 위해 호출
     public void saveTotalFeedback(String totalFeedback) {
         this.totalFeedback = totalFeedback;

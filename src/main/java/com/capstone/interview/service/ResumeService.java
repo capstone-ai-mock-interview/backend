@@ -4,8 +4,6 @@ import com.capstone.interview.dto.ResumeResponse;
 import com.capstone.interview.dto.ResumeUploadRequest;
 import com.capstone.interview.entity.Member;
 import com.capstone.interview.entity.Resume;
-import com.capstone.interview.repository.InterviewParticipantRepository;
-import com.capstone.interview.repository.InterviewRepository;
 import com.capstone.interview.repository.MemberRepository;
 import com.capstone.interview.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +28,6 @@ public class ResumeService {
     private final ResumePreprocessorService resumePreprocessorService;
     private final ResumeRepository resumeRepository;
     private final MemberRepository memberRepository;
-    private final InterviewRepository interviewRepository;
-    private final InterviewParticipantRepository interviewParticipantRepository;
 
     /**
      * PDF 이력서를 업로드하고 파싱하여 DB에 저장한다.
@@ -100,7 +96,7 @@ public class ResumeService {
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        return resumeRepository.findByMemberId(member.getId()).stream()
+        return resumeRepository.findByMemberIdAndDeletedAtIsNull(member.getId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -110,7 +106,7 @@ public class ResumeService {
      */
     @Transactional(readOnly = true)
     public ResumeResponse getResume(Long resumeId) {
-        Resume resume = resumeRepository.findById(resumeId)
+        Resume resume = resumeRepository.findByIdAndDeletedAtIsNull(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + resumeId));
         return toResponse(resume);
     }
@@ -124,21 +120,14 @@ public class ResumeService {
         Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("회원을 찾을 수 없습니다."));
 
-        Resume resume = resumeRepository.findById(resumeId)
+        Resume resume = resumeRepository.findByIdAndDeletedAtIsNull(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("이력서를 찾을 수 없습니다: " + resumeId));
 
         if (!resume.getMember().getId().equals(member.getId())) {
             throw new IllegalArgumentException("본인의 이력서만 삭제할 수 있습니다.");
         }
 
-        // 면접 기록에서 이력서 참조 해제
-        interviewRepository.findByResumeId(resumeId)
-                .forEach(interview -> interview.clearResume());
-
-        interviewParticipantRepository.findByResumeId(resumeId)
-                .forEach(participant -> participant.clearResume());
-
-        resumeRepository.delete(resume);
+        resume.softDelete();
         log.info("[이력서 삭제] id={}, memberId={}", resumeId, member.getId());
     }
 
