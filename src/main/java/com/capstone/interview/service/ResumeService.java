@@ -4,6 +4,7 @@ import com.capstone.interview.dto.ResumeResponse;
 import com.capstone.interview.dto.ResumeUploadRequest;
 import com.capstone.interview.entity.Member;
 import com.capstone.interview.entity.Resume;
+import com.capstone.interview.repository.InterviewParticipantRepository;
 import com.capstone.interview.repository.InterviewRepository;
 import com.capstone.interview.repository.MemberRepository;
 import com.capstone.interview.repository.ResumeRepository;
@@ -30,6 +31,7 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
     private final MemberRepository memberRepository;
     private final InterviewRepository interviewRepository;
+    private final InterviewParticipantRepository interviewParticipantRepository;
 
     /**
      * PDF 이력서를 업로드하고 파싱하여 DB에 저장한다.
@@ -132,6 +134,9 @@ public class ResumeService {
         // 면접 기록에서 이력서 참조 해제
         interviewRepository.findByResumeId(resumeId)
                 .forEach(interview -> interview.clearResume());
+
+        interviewParticipantRepository.findByResumeId(resumeId)
+                .forEach(participant -> participant.clearResume());
 
         resumeRepository.delete(resume);
         log.info("[이력서 삭제] id={}, memberId={}", resumeId, member.getId());
