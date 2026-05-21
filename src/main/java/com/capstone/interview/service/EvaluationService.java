@@ -27,6 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EvaluationService {
 
+    private static final long AGENT_SAVE_WAIT_TIMEOUT_MS = 5_000L;
+    private static final long AGENT_SAVE_POLL_INTERVAL_MS = 250L;
+
     private static final String TURN_EVALUATION_SYSTEM_PROMPT = """
             당신은 신입/주니어 개발자 기술 면접 답변을 평가하는 전문 면접관입니다.
 
@@ -158,8 +161,6 @@ public class EvaluationService {
     @Async
     @Transactional
     public void evaluate(String sessionId) {
-        waitForLastAgentSave();
-
         Interview interview = interviewRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
 
@@ -172,6 +173,13 @@ public class EvaluationService {
             evaluateAllParticipants(sessionId);
             return;
         }
+
+        if (!waitForLastAgentSave(sessionId)) {
+            return;
+        }
+
+        interview = interviewRepository.findBySessionId(sessionId)
+                .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
 
         if (interview.getTotalFeedback() != null) {
             log.info("[evaluation skipped] already completed sessionId={}", sessionId);
@@ -205,7 +213,9 @@ public class EvaluationService {
     @Async
     @Transactional
     public void evaluateAllParticipants(String sessionId) {
-        waitForLastAgentSave();
+        if (!waitForLastAgentSave(sessionId)) {
+            return;
+        }
 
         Interview interview = interviewRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
@@ -231,7 +241,9 @@ public class EvaluationService {
     @Async
     @Transactional
     public void evaluateParticipant(String sessionId, Long memberId) {
-        waitForLastAgentSave();
+        if (!waitForLastAgentSave(sessionId)) {
+            return;
+        }
 
         Interview interview = interviewRepository.findBySessionId(sessionId)
                 .orElseThrow(() -> new IllegalArgumentException("면접 세션을 찾을 수 없습니다: " + sessionId));
@@ -465,9 +477,27 @@ public class EvaluationService {
         return response;
     }
 
-    private void waitForLastAgentSave() {
+    private boolean waitForLastAgentSave(String sessionId) {
+        long deadline = System.nanoTime() + AGENT_SAVE_WAIT_TIMEOUT_MS * 1_000_000L;
+        long pending = interviewQnaRepository.countPendingAgentSaves(sessionId);
+
+        while (pending > 0 && System.nanoTime() < deadline) {
+            sleep(AGENT_SAVE_POLL_INTERVAL_MS);
+            pending = interviewQnaRepository.countPendingAgentSaves(sessionId);
+        }
+
+        if (pending > 0) {
+            log.warn("[evaluation wait timeout] sessionId={}, pendingAgentSaves={}", sessionId, pending);
+            return false;
+        }
+
+        log.info("[evaluation wait completed] sessionId={}", sessionId);
+        return true;
+    }
+
+    private void sleep(long millis) {
         try {
-            Thread.sleep(5_000);
+            Thread.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
