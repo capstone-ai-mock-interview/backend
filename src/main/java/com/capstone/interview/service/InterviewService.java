@@ -320,6 +320,7 @@ public class InterviewService {
                     interview.getCategory(),
                     "",
                     "",
+                    "",
                     interview.getDurationMinutes() * 60,
                     ANSWER_TIME_LIMIT_SECONDS,
                     interview.getMaxParticipants(),
@@ -340,18 +341,20 @@ public class InterviewService {
                                           String jobField, int totalDurationSeconds,
                                           List<Map<String, Object>> participantMeta) {
         String resumeText = resume != null ? resume.getOriginalText() : "";
+        String resumeProfile = resume != null ? resume.getKeywords() : "";
         String coverLetterText = coverLetter != null ? coverLetter.getOriginalText() : "";
 
         try {
             if (interview.isGroupMode()) {
                 agentDispatchService.dispatchGroup(
                         interview.getRoomName(), interview.getSessionId(), jobField,
-                        "", "", totalDurationSeconds,
+                        "", "", "", totalDurationSeconds,
                         ANSWER_TIME_LIMIT_SECONDS, interview.getMaxParticipants(), participantMeta);
             } else {
                 agentDispatchService.dispatch(
                         interview.getRoomName(), interview.getSessionId(), jobField,
-                        resumeText, coverLetterText, totalDurationSeconds, ANSWER_TIME_LIMIT_SECONDS);
+                        resumeText, coverLetterText, resumeProfile,
+                        totalDurationSeconds, ANSWER_TIME_LIMIT_SECONDS);
             }
         } catch (Exception e) {
             log.error("[세션 생성] Agent dispatch 실패 sessionId={}", interview.getSessionId(), e);
@@ -390,15 +393,18 @@ public class InterviewService {
         List<Map<String, Object>> meta = new ArrayList<>();
         for (InterviewParticipant p : participants) {
             String resumeText = p.getResume() != null ? p.getResume().getOriginalText() : "";
+            String resumeProfile = p.getResume() != null ? p.getResume().getKeywords() : "";
             if (resumeText.isBlank() && p.getRole() == ParticipantRole.HOST
                     && p.getInterview().getResume() != null) {
                 resumeText = p.getInterview().getResume().getOriginalText();
+                resumeProfile = p.getInterview().getResume().getKeywords();
             }
             meta.add(Map.of(
                     "memberId", p.getMember().getId(),
                     "identity", p.liveKitIdentity(),
                     "name", p.getMember().getName(),
-                    "resumeText", resumeText != null ? resumeText : ""
+                    "resumeText", resumeText != null ? resumeText : "",
+                    "resumeProfile", resumeProfile != null ? resumeProfile : ""
             ));
         }
         return meta;
@@ -422,7 +428,8 @@ public class InterviewService {
                 "memberId", host.getId(),
                 "identity", participant.liveKitIdentity(),
                 "name", host.getName(),
-                "resumeText", resume != null && resume.getOriginalText() != null ? resume.getOriginalText() : ""
+                "resumeText", resume != null && resume.getOriginalText() != null ? resume.getOriginalText() : "",
+                "resumeProfile", resume != null && resume.getKeywords() != null ? resume.getKeywords() : ""
         );
     }
 

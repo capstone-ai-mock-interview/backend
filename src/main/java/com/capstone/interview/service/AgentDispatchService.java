@@ -48,12 +48,14 @@ public class AgentDispatchService {
      */
     public void dispatch(String roomName, String sessionId, String jobRole,
                          String resumeText, String coverLetterText,
+                         String resumeProfile,
                          int totalDurationSeconds, int answerTimeLimitSeconds) {
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("mode", "SOLO");
         metadata.put("sessionId", sessionId);
         metadata.put("jobRole", jobRole);
         metadata.put("resumeText", resumeText != null ? resumeText : "");
+        metadata.put("resumeProfile", resumeProfile != null ? resumeProfile : "");
         metadata.put("coverLetterText", coverLetterText != null ? coverLetterText : "");
         metadata.put("totalDurationSeconds", totalDurationSeconds);
         metadata.put("answerTimeLimitSeconds", answerTimeLimitSeconds);
@@ -62,6 +64,7 @@ public class AgentDispatchService {
 
     public void dispatchGroup(String roomName, String sessionId, String jobRole,
                               String resumeText, String coverLetterText,
+                              String resumeProfile,
                               int totalDurationSeconds, int answerTimeLimitSeconds,
                               int maxParticipants, List<Map<String, Object>> participants) {
         Map<String, Object> metadata = new LinkedHashMap<>();
@@ -69,6 +72,7 @@ public class AgentDispatchService {
         metadata.put("sessionId", sessionId);
         metadata.put("jobRole", jobRole);
         metadata.put("resumeText", resumeText != null ? resumeText : "");
+        metadata.put("resumeProfile", resumeProfile != null ? resumeProfile : "");
         metadata.put("coverLetterText", coverLetterText != null ? coverLetterText : "");
         metadata.put("totalDurationSeconds", totalDurationSeconds);
         metadata.put("answerTimeLimitSeconds", answerTimeLimitSeconds);

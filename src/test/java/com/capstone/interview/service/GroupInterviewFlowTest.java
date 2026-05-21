@@ -69,7 +69,7 @@ class GroupInterviewFlowTest {
         assertEquals("WAITING", response.data().status());
         assertEquals("GROUP", response.data().mode());
         assertEquals(2, response.data().maxParticipants());
-        verify(agentDispatchService, never()).dispatchGroup(any(), any(), any(), any(), any(), anyInt(), anyInt(), anyInt(), anyList());
+        verify(agentDispatchService, never()).dispatchGroup(any(), any(), any(), any(), any(), any(), anyInt(), anyInt(), anyInt(), anyList());
     }
 
     @Test
@@ -98,7 +98,7 @@ class GroupInterviewFlowTest {
         var order = inOrder(participantRepository, agentDispatchService);
         order.verify(participantRepository).save(any(InterviewParticipant.class));
         order.verify(agentDispatchService).dispatch(
-                eq("room-test"), anyString(), eq("BACKEND"), anyString(), anyString(), eq(900), anyInt());
+                eq("room-test"), anyString(), eq("BACKEND"), anyString(), anyString(), anyString(), eq(900), anyInt());
     }
 
     @Test
@@ -134,7 +134,7 @@ class GroupInterviewFlowTest {
         LobbyResponse lobby = interviewService.setReady("sess-group-1");
 
         assertEquals("IN_PROGRESS", lobby.data().status());
-        verify(agentDispatchService).dispatchGroup(any(), eq("sess-group-1"), any(), any(), any(), anyInt(), anyInt(), eq(2), anyList());
+        verify(agentDispatchService).dispatchGroup(any(), eq("sess-group-1"), any(), any(), any(), any(), anyInt(), anyInt(), eq(2), anyList());
         verify(liveKitRoomService).sendData(eq("room-1"), argThat(m ->
                 "START".equals(m.get("type")) && !m.containsKey("payload")));
     }
