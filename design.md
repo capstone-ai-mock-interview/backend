@@ -362,6 +362,7 @@ erDiagram
 - `password`: 암호화된 비밀번호
 
 #### RESUMES
+- 이력서 삭제는 소프트 삭제로 처리한다. `deleted_at`이 NULL인 row만 목록/상세 조회 및 새 면접 생성에서 사용할 수 있다.
 - 회원이 등록한 이력서
 - `original_text`: PDF 파싱 또는 직접 입력한 원본 텍스트
 - `file_url`: S3에 저장된 PDF 파일 주소
@@ -418,7 +419,8 @@ CREATE TABLE resumes (
     keywords JSON,
     embedding vector(1536),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMP
 );
 
 CREATE TABLE cover_letters (
@@ -474,6 +476,7 @@ CREATE TABLE reference_data (
 
 -- 인덱스
 CREATE INDEX idx_resumes_member ON resumes(member_id);
+CREATE INDEX idx_resumes_member_deleted_at ON resumes(member_id, deleted_at);
 CREATE INDEX idx_cover_letters_member ON cover_letters(member_id);
 CREATE INDEX idx_interviews_member ON interviews(member_id);
 CREATE INDEX idx_interviews_status ON interviews(status);
