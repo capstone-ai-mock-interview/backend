@@ -38,7 +38,7 @@ public class EvaluationService {
             출력 규칙:
             - 반드시 JSON 객체만 출력합니다.
             - Markdown, 코드블록, 설명 문장, 주석을 출력하지 않습니다.
-            - individual_feedback은 120자 이하입니다.
+            - individual_feedback은 기술 정확도, 논리적 전달력, 답변 구체성을 기준으로 평가하며, 답변의 강점과 약점을 모두 언급합니다. 150자 이하입니다.
             - model_answer는 180자 이하입니다.
             - 모든 문장은 한국어로 작성합니다.
 
@@ -55,30 +55,55 @@ public class EvaluationService {
             역할:
             - 여러 턴의 질문, 답변 요약, 개별 피드백을 바탕으로 전체 면접 결과를 요약합니다.
             - 원본 답변을 새로 길게 재평가하지 말고, 제공된 턴별 평가 결과를 종합합니다.
-            - 강점, 약점, 개선 방향이 명확히 드러나도록 작성합니다.
 
-            평가 기준:
-            - 기술역량: 개념 이해, 기술 정확성, 원리 설명 능력
+            평가 유형 (7개):
+            - 학습력: 새로운 기술을 습득하고 적용하는 능력
             - 문제해결력: 상황 분석, 해결 전략, 트러블슈팅 사고
-            - 논리적 설명력: 답변 구조, 근거 제시, 전달 명확성
+            - 협업능력: 팀 내 소통, 의견 조율, 협력 경험
+            - 기술역량: 개념 이해, 기술 정확성, 원리 설명 능력
+            - 주도성: 자발적 개선, 리더십, 적극적 참여
+            - 스트레스내성: 압박 상황 대처, 돌발 질문 대응력
             - 직무적합성: 지원 직무와 답변 경험의 연결성
+
+            total_feedback 작성 규칙:
+            - 면접에서 보여준 강점, 부족한 부분, 개선 방향을 하나의 자연스러운 문단으로 서술합니다.
+            - 번호 매기기(1), 2), 3))나 항목 구분 없이 매끄럽게 이어지는 문장으로 작성합니다.
+            - 준비도, 전달력, 지식 균형에 대한 분석을 포함합니다.
+            - 다음 면접을 위한 핵심 학습 권고 2~3가지를 자연스럽게 녹여서 제시합니다.
+            - 400자 이하
+
+            strength_types / weakness_types 작성 규칙:
+            - strength_types: 7개 유형 중 강점 유형을 반드시 1~2개 선택하여 칭찬 코멘트와 함께 작성합니다. 비어있으면 안 됩니다.
+            - weakness_types: 7개 유형 중 약점 유형을 반드시 1~2개 선택하여 보완 코멘트와 함께 작성합니다. 비어있으면 안 됩니다.
+
+            competency_chart 작성 규칙:
+            - 반드시 7개 유형 모두 포함
+            - 해당 면접에서 평가할 수 없는 유형은 3점으로 설정
+            - 값은 0~10 사이 정수
 
             출력 규칙:
             - 반드시 JSON 객체만 출력합니다.
             - Markdown, 코드블록, 설명 문장, 주석을 출력하지 않습니다.
-            - total_feedback은 400자 이하입니다.
             - overall_score는 반드시 "상", "중", "하" 중 하나입니다.
-            - competency_chart의 값은 0~10 사이 정수입니다.
             - 모든 문장은 한국어로 작성합니다.
 
             출력 형식:
             {
-              "total_feedback": "전체 면접에 대한 종합 피드백",
+              "total_feedback": "종합 피드백",
               "overall_score": "중",
+              "strength_types": [
+                {"type": "유형명", "comment": "칭찬 코멘트"}
+              ],
+              "weakness_types": [
+                {"type": "유형명", "comment": "보완 코멘트"}
+              ],
               "competency_chart": {
-                "기술역량": 0,
+                "학습력": 3,
                 "문제해결력": 0,
-                "논리적 설명력": 0,
+                "협업능력": 3,
+                "기술역량": 0,
+                "주도성": 3,
+                "스트레스내성": 3,
                 "직무적합성": 0
               }
             }
@@ -348,8 +373,17 @@ public class EvaluationService {
             String competencyChart = root.path("competency_chart").isMissingNode()
                     ? "{}"
                     : root.path("competency_chart").toString();
+            String strengthTypes = root.path("strength_types").isMissingNode()
+                    ? "[]"
+                    : root.path("strength_types").toString();
+            String weaknessTypes = root.path("weakness_types").isMissingNode()
+                    ? "[]"
+                    : root.path("weakness_types").toString();
 
-            String combined = totalFeedback + "\n\n[SCORE]\n" + overallScore + "\n\n[CHART]\n" + competencyChart;
+            String combined = totalFeedback + "\n\n[SCORE]\n" + overallScore
+                    + "\n\n[CHART]\n" + competencyChart
+                    + "\n\n[STRENGTH]\n" + strengthTypes
+                    + "\n\n[WEAKNESS]\n" + weaknessTypes;
             interview.saveTotalFeedback(combined);
             interviewRepository.save(interview);
             log.info("[total evaluation saved] sessionId={}", interview.getSessionId());

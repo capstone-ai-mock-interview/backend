@@ -156,15 +156,29 @@ public class FeedbackService {
                 .totalFeedback(onlyFeedback)
                 .overallScore(extractOverallScore(rawFeedback))
                 .competencyChart(onlyChart)
+                .strengthTypes(extractSection(rawFeedback, "[STRENGTH]", "[WEAKNESS]"))
+                .weaknessTypes(extractSection(rawFeedback, "[WEAKNESS]", null))
                 .qaPairs(qaPairs)
                 .build();
     }
 
     private String extractChartData(String rawData) {
         if (rawData != null && rawData.contains("[CHART]")) {
-            return rawData.substring(rawData.indexOf("[CHART]") + "[CHART]".length()).trim();
+            int start = rawData.indexOf("[CHART]") + "[CHART]".length();
+            int end = rawData.indexOf("\n\n[STRENGTH]", start);
+            if (end == -1) end = rawData.length();
+            return rawData.substring(start, end).trim();
         }
         return "{}";
+    }
+
+    private String extractSection(String rawData, String startTag, String endTag) {
+        if (rawData == null || !rawData.contains(startTag)) return "[]";
+        int start = rawData.indexOf(startTag) + startTag.length();
+        int end = (endTag != null && rawData.contains(endTag))
+                ? rawData.indexOf(endTag, start)
+                : rawData.length();
+        return rawData.substring(start, end).trim();
     }
 
     private String parseAnswerSummary(InterviewQna qna) {
