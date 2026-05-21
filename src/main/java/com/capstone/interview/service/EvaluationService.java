@@ -74,8 +74,8 @@ public class EvaluationService {
             - 400자 이하
 
             strength_types / weakness_types 작성 규칙:
-            - 7개 유형 중 강점 유형 1~2개를 선택하여 간단한 칭찬 코멘트와 함께 작성
-            - 7개 유형 중 약점 유형 1~2개를 선택하여 간단한 보완 코멘트와 함께 작성
+            - strength_types: 7개 유형 중 강점 유형을 반드시 1~2개 선택하여 칭찬 코멘트와 함께 작성합니다. 비어있으면 안 됩니다.
+            - weakness_types: 7개 유형 중 약점 유형을 반드시 1~2개 선택하여 보완 코멘트와 함께 작성합니다. 비어있으면 안 됩니다.
 
             competency_chart 작성 규칙:
             - 반드시 7개 유형 모두 포함
