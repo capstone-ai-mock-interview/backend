@@ -57,7 +57,7 @@ public class ResumePreprocessorService {
         String resumeText = limitLength(originalText);
         String response = llmClient.invoke(SYSTEM_PROMPT, USER_PROMPT_TEMPLATE.formatted(resumeText));
         try {
-            JsonNode root = objectMapper.readTree(response.trim());
+            JsonNode root = objectMapper.readTree(extractJson(response));
             validate(root);
             return objectMapper.writeValueAsString(root);
         } catch (Exception e) {
@@ -71,6 +71,21 @@ public class ResumePreprocessorService {
             return trimmed;
         }
         return trimmed.substring(0, MAX_RESUME_CHARS);
+    }
+
+    private String extractJson(String llmResponse) {
+        if (llmResponse == null) {
+            return "";
+        }
+        String response = llmResponse.trim();
+        if (response.startsWith("```")) {
+            response = response
+                    .replaceAll("^```json\\s*", "")
+                    .replaceAll("^```\\s*", "")
+                    .replaceAll("\\s*```$", "")
+                    .trim();
+        }
+        return response;
     }
 
     private void validate(JsonNode root) {
