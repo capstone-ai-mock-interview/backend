@@ -34,6 +34,7 @@ public class InterviewService {
     private final LiveKitRoomService liveKitRoomService;
     private final AgentDispatchService agentDispatchService;
     private final EvaluationService evaluationService;
+    private final EvaluationRequestDispatcher evaluationRequestDispatcher;
 
     @Transactional
     public SessionCreateResponse createSession(SessionCreateRequest request) {
@@ -250,7 +251,7 @@ public class InterviewService {
         interview.complete();
         interviewRepository.save(interview);
 
-        evaluationService.evaluate(sessionId);
+        evaluationRequestDispatcher.requestSessionEvaluation(sessionId);
 
         return new SessionEndResponse(
                 true,

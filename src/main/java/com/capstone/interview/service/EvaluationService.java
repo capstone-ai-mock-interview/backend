@@ -6,7 +6,6 @@ import com.capstone.interview.entity.InterviewMode;
 import com.capstone.interview.entity.InterviewParticipant;
 import com.capstone.interview.entity.InterviewQna;
 import com.capstone.interview.entity.InterviewStatus;
-import com.capstone.interview.event.QnaSavedEvent;
 import com.capstone.interview.repository.InterviewParticipantRepository;
 import com.capstone.interview.repository.InterviewQnaRepository;
 import com.capstone.interview.repository.InterviewRepository;
@@ -17,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 
@@ -118,16 +115,6 @@ public class EvaluationService {
     private final InterviewParticipantRepository participantRepository;
     private final LLMClient llmClient;
     private final ObjectMapper objectMapper;
-
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleQnaSaved(QnaSavedEvent event) {
-        try {
-            evaluateTurn(event.sessionId(), event.turnNumber());
-        } catch (Exception e) {
-            log.warn("[turn evaluation failed] sessionId={}, turn={}", event.sessionId(), event.turnNumber(), e);
-        }
-    }
 
     @Transactional
     public void evaluateTurn(String sessionId, Integer turnNumber) {

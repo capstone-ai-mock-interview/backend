@@ -27,5 +27,16 @@ jwt:
 llm:
   provider: mock
 
+aws:
+  region: us-east-1
+
+evaluation:
+  dispatcher: direct
+  queue:
+    turn-url:
+    turn-name: pj-kmucd1-10-turn-evaluation
+    session-url:
+    session-name: pj-kmucd1-10-session-evaluation
+
 cors:
   allowed-origins: http://localhost:5173

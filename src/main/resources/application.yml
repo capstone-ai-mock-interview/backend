@@ -36,6 +36,17 @@ llm:
     max-tokens: ${LLM_MAX_TOKENS:1200}
     temperature: ${LLM_TEMPERATURE:0.2}
 
+aws:
+  region: ${AWS_REGION:us-east-1}
+
+evaluation:
+  dispatcher: ${EVALUATION_DISPATCHER:sqs}
+  queue:
+    turn-url: ${TURN_EVALUATION_QUEUE_URL:}
+    turn-name: ${TURN_EVALUATION_QUEUE_NAME:pj-kmucd1-10-turn-evaluation}
+    session-url: ${SESSION_EVALUATION_QUEUE_URL:}
+    session-name: ${SESSION_EVALUATION_QUEUE_NAME:pj-kmucd1-10-session-evaluation}
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 3600000  # 1시간 (밀리초). 리프레쉬 토큰 추가시 짧게 바꿔야 함.
