@@ -45,6 +45,7 @@ dependencies {
 	//AWS 베드락 의존성 추가
 	implementation platform('software.amazon.awssdk:bom:2.25.11')
 	implementation 'software.amazon.awssdk:bedrockruntime'
+	implementation 'software.amazon.awssdk:sqs'
 	implementation 'software.amazon.awssdk:auth'
 }
 
